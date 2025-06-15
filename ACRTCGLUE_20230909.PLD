@@ -1,0 +1,106 @@
+Name     acrtcglue ;
+PartNo   00 ;
+Date     2023/09/09 ;
+Revision 01 ;
+Designer Engineer ;
+Company  individual use ;
+Assembly None ;
+Location  ;
+Device   g22v10 ;
+
+/* *************** INPUT PINS *********************/
+PIN   1  = CLK                        ;
+PIN   2  = RDn                        ; /*                                 */ 
+PIN   3  = WRn                        ; /*                                 */ 
+PIN   4  = CSn                        ; /*                                 */ 
+PIN   5  = DTACKn_PU                        ; /*                                 */
+PIN   6  = DACKn				;
+PIN   7  = RESETn                     ; 
+
+/* *************** OUTPUT PINS *********************/
+PIN  23   = WAITn                        ; /*                                 */ 
+PIN  22   = ACRTC_CSnD                        ; /*                                 */
+PIN  21  = ACRTC_DACKn 				;
+PIN  [20,19,18,17] =[Q3,Q2,Q1,Q0]			; 
+
+/* */
+
+ACRTC_CSn  =  (RDn & WRn) # CSn ;
+ACRTC_CSnD = ACRTC_CSn # !(Q1 & !Q0);
+WAITn  =  ACRTC_CSn # !(DTACKn_PU # (!Q3 # Q2))  ;
+
+ACRTC_DACKn = DACKn & RESETn ;
+
+/*   state machine for CSn Delay and WAITn stretch*/
+field CSnD_WAITnS =[Q3,Q2,Q1,Q0];
+$define DS 'b'0000	/* 0 */
+$define D1 'b'0001	/* 1 */
+$define D2 'b'0011	/* 3 */
+$define DD 'b'0010	/* 2 */
+$define W1 'b'0110	/* 6 */
+$define W2 'b'1110	/* 14 */
+$define WD 'b'1010	/* 10 */
+$define N1 'b'0100	/* 4 */
+$define N2 'b'0101	/* 5 */
+$define N3 'b'0111	/* 7 */
+$define N4 'b'1000	/* 8 */
+$define N5 'b'1001	/* 9 */
+$define N6 'b'1011	/* 11 */
+$define N7 'b'1100	/* 12 */
+$define N8 'b'1101	/* 13 */
+$define N9 'b'1111	/* 15 */
+
+
+
+
+field csdtmode = [DTACKn_PU,ACRTC_CSn] ;
+csactive = csdtmode:2;
+csdtactive = csdtmode:0;
+
+
+Sequenced CSnD_WAITnS{
+
+present DS
+		if csactive		next D1;
+		default		next DS;
+Present D1
+		if csactive		next D2;
+		default		next DS;
+Present D2
+		if csactive		next DD;
+		default		next DS;
+Present DD
+		if csactive		next DD;
+		if csdtactive		next W1;
+		default		next DS;
+Present W1
+		if csdtactive		next W2;
+		if csactive		next DD;
+		default		next DS;
+Present W2
+		if csdtactive		next WD;
+		if csactive		next DD;
+		default		next DS;
+Present WD
+		if csdtactive		next WD;
+		if csactive		next DD;
+		default		next DS;
+Present N1
+				next DS;
+Present N2
+				next DS;
+Present N3
+				next DS;
+Present N4
+				next DS;
+Present N5
+				next DS;
+Present N6
+				next DS;
+Present N7
+				next DS;
+Present N8
+				next DS;
+Present N9
+				next DS;
+}
